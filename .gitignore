@@ -5,6 +5,13 @@ build/
 # MacOS Cache
 .DS_Store
 
+# Xmake Generated
 CMakeLists.txt
-.idea/
 cmake-build-debug/
+
+# Jetbrains
+.idea/
+
+# Visual Studio
+bin/
+obj/
