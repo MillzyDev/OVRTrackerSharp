@@ -80,7 +80,7 @@ extern "C" [[maybe_unused]] tracker_role get_role_for_tracker(vr::TrackedDeviceI
     else if (device_name == "vive_tracker_left_foot") {
         return tracker_role::LEFT_FOOT;
     }
-    else if (device_name == "vive_tracker_right_food") {
+    else if (device_name == "vive_tracker_right_foot") {
         return tracker_role::RIGHT_FOOT;
     }
 
