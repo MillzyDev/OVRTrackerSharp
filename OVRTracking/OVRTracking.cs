@@ -14,11 +14,14 @@ namespace OVRTracking
 
         private delegate OVRTransform GetPoseForTrackerDelegate([MarshalAs(UnmanagedType.U4)] int index);
 
+        private delegate OVRTransform GetPoseForHmdDelegate();
+
         private delegate OVRTrackerRole GetRoleForTrackerDelegate([MarshalAs(UnmanagedType.U4)] int index);
 
         private readonly InitTrackingDelegate _initTracking;
         private readonly GetGenericTrackerIndicesDelegate _getGenericTrackerIndices;
         private readonly GetPoseForTrackerDelegate _getPoseForTracker;
+        private readonly GetPoseForHmdDelegate _getPoseForHmd;
         private readonly GetRoleForTrackerDelegate _getRoleForTracker;
 
         public OVRTracking(string? nativeLibPath = null)
@@ -37,6 +40,9 @@ namespace OVRTracking
             IntPtr nativeGetPoseForTrackerHandle = GetProcAddress(nativeHandle, "get_pose_for_tracker");
             if (nativeGetPoseForTrackerHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
 
+            IntPtr nativeGetPoseForHmdHandle = GetProcAddress(nativeHandle, "get_pose_for_hmd");
+            if (nativeGetPoseForHmdHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
+
             IntPtr nativeGetRoleForTrackerHandle = GetProcAddress(nativeHandle, "get_role_for_tracker");
             if (nativeGetRoleForTrackerHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
 
@@ -47,6 +53,8 @@ namespace OVRTracking
                     nativeGetGenericTrackerIndicesHandle);
             _getPoseForTracker =
                 Marshal.GetDelegateForFunctionPointer<GetPoseForTrackerDelegate>(nativeGetPoseForTrackerHandle);
+            _getPoseForHmd =
+                Marshal.GetDelegateForFunctionPointer<GetPoseForHmdDelegate>(nativeGetPoseForHmdHandle);
             _getRoleForTracker =
                 Marshal.GetDelegateForFunctionPointer<GetRoleForTrackerDelegate>(nativeGetRoleForTrackerHandle);
         }
@@ -61,7 +69,7 @@ namespace OVRTracking
             int size = 0;
             IntPtr ptr = _getGenericTrackerIndices(ref size);
 
-            if (size == 0) return new int[] { };
+            if (size == 0 || ptr == IntPtr.Zero) return new int[] { };
 
             int[] values = new int[size];
             Marshal.Copy(ptr, values, 0, size);
@@ -71,6 +79,11 @@ namespace OVRTracking
         public OVRTransform GetPoseForTracker(int index)
         {
             return _getPoseForTracker.Invoke(index);
+        }
+
+        public OVRTransform GetPoseForHmd()
+        {
+            return _getPoseForHmd.Invoke();
         }
 
         public OVRTrackerRole GetRoleForTracker(int index)
