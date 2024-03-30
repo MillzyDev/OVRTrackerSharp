@@ -26,5 +26,6 @@ extern "C" {
 [[maybe_unused]] __declspec(dllexport) vr::HmdError init_tracking();
 [[maybe_unused]] __declspec(dllexport) vr::TrackedDeviceIndex_t *get_generic_tracker_indices(size_t *size);
 [[maybe_unused]] __declspec(dllexport) transform get_pose_for_tracker(vr::TrackedDeviceIndex_t index);
+[[maybe_unused]] __declspec(dllexport) transform get_pose_for_hmd();
 [[maybe_unused]] __declspec(dllexport) tracker_role get_role_for_tracker(vr::TrackedDeviceIndex_t index);
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 
+
 extern "C" [[maybe_unused]] vr::HmdError init_tracking() {
     vr::HmdError error;
     vr::VR_Init(&error, vr::VRApplication_Background);
@@ -27,6 +28,11 @@ extern "C" [[maybe_unused]] vr::TrackedDeviceIndex_t *get_generic_tracker_indice
 
     // store tracker indices on the heap, since the vector gets popped from the stack
     size_t tracker_count = tracker_indices.size();
+
+    if (tracker_count == 0) {
+        return nullptr;
+    }
+
     vr::TrackedDeviceIndex_t *indices_ptr = tracker_indices.data();
     void *indices_alloc = calloc(tracker_count, sizeof(vr::TrackedDeviceIndex_t)); // windows is probably clever enough to free the heap for me
     std::memcpy(indices_alloc, indices_ptr, tracker_count * sizeof(vr::TrackedDeviceIndex_t));
@@ -45,10 +51,34 @@ extern "C" [[maybe_unused]] transform get_pose_for_tracker(vr::TrackedDeviceInde
     vector_3 position {
         pose_matrix[0][3],
         pose_matrix[1][3],
-        -pose_matrix[2][3] // right hand coord moment
+        -pose_matrix[2][3]
     };
 
-    // this is straight up fucking sourcery who came up with this?
+    float rot_w = std::sqrt(1.0f + pose_matrix[0][0] + pose_matrix[1][1] + pose_matrix[2][2]) / 2.0f;
+    float rot_4w = 4 * rot_w;
+    quaternion rotation {
+            -((pose_matrix[2][1] - pose_matrix[1][2]) / rot_4w),
+            -((pose_matrix[0][2] - pose_matrix[2][0]) / rot_4w),
+            ((pose_matrix[1][0] - pose_matrix[0][1]) / rot_4w),
+            rot_w
+    };
+
+    return { position, rotation };
+}
+
+extern "C" [[maybe_unused]] transform get_pose_for_hmd() {
+    static vr::IVRCompositor *compositor = vr::VRCompositor();
+
+    vr::TrackedDevicePose_t pose{};
+    compositor->GetLastPoseForTrackedDeviceIndex(0, nullptr, &pose); // im 90% sure hmd is always #1.
+    auto pose_matrix = pose.mDeviceToAbsoluteTracking.m;
+
+    vector_3 position {
+            pose_matrix[0][3],
+            pose_matrix[1][3],
+            -pose_matrix[2][3]
+    };
+
     float rot_w = std::sqrt(1.0f + pose_matrix[0][0] + pose_matrix[1][1] + pose_matrix[2][2]) / 2.0f;
     float rot_4w = 4 * rot_w;
     quaternion rotation {
@@ -64,15 +94,15 @@ extern "C" [[maybe_unused]] transform get_pose_for_tracker(vr::TrackedDeviceInde
 extern "C" [[maybe_unused]] tracker_role get_role_for_tracker(vr::TrackedDeviceIndex_t index) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
 
-    char *device_name_buf = nullptr;
-    vr::ETrackedPropertyError error;
-    unsigned int size = vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_ManufacturerName_String, device_name_buf, vr::k_unMaxPropertyStringSize, &error);
-
+    unsigned int size = vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_ManufacturerName_String, nullptr, 0);
     if (!size) {
         return tracker_role::INVALID;
     }
 
-    std::string device_name(device_name_buf, size);
+    char *pch_buffer = new char[size];
+    (void)vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_ManufacturerName_String, pch_buffer, size);
+
+    std::string device_name = pch_buffer;
 
     if (device_name == "vive_tracker_waist") {
         return tracker_role::WAIST;
@@ -84,5 +114,6 @@ extern "C" [[maybe_unused]] tracker_role get_role_for_tracker(vr::TrackedDeviceI
         return tracker_role::RIGHT_FOOT;
     }
 
+    delete [] pch_buffer;
     return tracker_role::INVALID;
 }
