@@ -10,8 +10,7 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED 20)
 
-set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native/src)
-set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native/include)
+set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native/)
 
 if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
     message(SEND_ERROR "Compiler is not supported. Please use Clang.")
@@ -46,5 +45,3 @@ target_link_options(${COMPILE_ID} PUBLIC -static)
 
 target_include_directories(${COMPILE_ID} PRIVATE .)
 target_include_directories(${COMPILE_ID} PRIVATE ${SOURCE_DIR})
-target_include_directories(${COMPILE_ID} PRIVATE ${INCLUDE_DIR})
-
