@@ -5,6 +5,8 @@
 #include <vector>
 #include <cmath>
 
+#include <windows.h>
+
 
 extern "C" [[maybe_unused]] vr::HmdError init_tracking() {
     vr::HmdError error;
@@ -91,29 +93,13 @@ extern "C" [[maybe_unused]] transform get_pose_for_hmd() {
     return { position, rotation };
 }
 
-extern "C" [[maybe_unused]] tracker_role get_role_for_tracker(vr::TrackedDeviceIndex_t index) {
+extern "C" [[maybe_unused]] char *get_tracker_name(vr::TrackedDeviceIndex_t index) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
 
-    unsigned int size = vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_ManufacturerName_String, nullptr, 0);
-    if (!size) {
-        return tracker_role::INVALID;
-    }
+    unsigned int size = vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_TrackingSystemName_String, nullptr, 0);
 
     char *pch_buffer = new char[size];
     (void)vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_ManufacturerName_String, pch_buffer, size);
 
-    std::string device_name = pch_buffer;
-
-    if (device_name == "vive_tracker_waist") {
-        return tracker_role::WAIST;
-    }
-    else if (device_name == "vive_tracker_left_foot") {
-        return tracker_role::LEFT_FOOT;
-    }
-    else if (device_name == "vive_tracker_right_foot") {
-        return tracker_role::RIGHT_FOOT;
-    }
-
-    delete [] pch_buffer;
-    return tracker_role::INVALID;
+    return pch_buffer;
 }
