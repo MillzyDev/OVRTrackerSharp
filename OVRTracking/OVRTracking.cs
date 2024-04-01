@@ -1,7 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
 // ReSharper disable InconsistentNaming
 
 namespace OVRTracking
@@ -10,19 +11,17 @@ namespace OVRTracking
     {
         private delegate VRError InitTrackingDelegate();
 
-        private delegate IntPtr GetGenericTrackerIndicesDelegate([MarshalAs(UnmanagedType.U8)] ref int size);
+        private delegate IntPtr GetTrackerIndicesDelegate([MarshalAs(UnmanagedType.U8)] ref int size);
 
         private delegate OVRTransform GetPoseForTrackerDelegate([MarshalAs(UnmanagedType.U4)] int index);
 
-        private delegate OVRTransform GetPoseForHmdDelegate();
-
-        private delegate OVRTrackerRole GetRoleForTrackerDelegate([MarshalAs(UnmanagedType.U4)] int index);
+        [return: MarshalAs(UnmanagedType.LPStr)]
+        private delegate string GetTrackerSerialDelegate([MarshalAs(UnmanagedType.U4)] int index);
 
         private readonly InitTrackingDelegate _initTracking;
-        private readonly GetGenericTrackerIndicesDelegate _getGenericTrackerIndices;
+        private readonly GetTrackerIndicesDelegate _getTrackerIndices;
         private readonly GetPoseForTrackerDelegate _getPoseForTracker;
-        private readonly GetPoseForHmdDelegate _getPoseForHmd;
-        private readonly GetRoleForTrackerDelegate _getRoleForTracker;
+        private readonly GetTrackerSerialDelegate _getTrackerSerial;
 
         public OVRTracking(string? nativeLibPath = null)
         {
@@ -34,29 +33,24 @@ namespace OVRTracking
             IntPtr nativeInitTrackingHandle = GetProcAddress(nativeHandle, "init_tracking");
             if (nativeInitTrackingHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
 
-            IntPtr nativeGetGenericTrackerIndicesHandle = GetProcAddress(nativeHandle, "get_generic_tracker_indices");
-            if (nativeGetGenericTrackerIndicesHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
+            IntPtr nativeGetTrackerIndicesHandle = GetProcAddress(nativeHandle, "get_tracker_indices");
+            if (nativeGetTrackerIndicesHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
 
             IntPtr nativeGetPoseForTrackerHandle = GetProcAddress(nativeHandle, "get_pose_for_tracker");
             if (nativeGetPoseForTrackerHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
 
-            IntPtr nativeGetPoseForHmdHandle = GetProcAddress(nativeHandle, "get_pose_for_hmd");
-            if (nativeGetPoseForHmdHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
-
-            IntPtr nativeGetRoleForTrackerHandle = GetProcAddress(nativeHandle, "get_role_for_tracker");
-            if (nativeGetRoleForTrackerHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
+            IntPtr nativeGetTrackerSerialHandle = GetProcAddress(nativeHandle, "get_tracker_serial");
+            if (nativeGetTrackerSerialHandle == IntPtr.Zero) HandleError(Marshal.GetLastWin32Error());
 
             _initTracking =
                 Marshal.GetDelegateForFunctionPointer<InitTrackingDelegate>(nativeInitTrackingHandle);
-            _getGenericTrackerIndices =
-                Marshal.GetDelegateForFunctionPointer<GetGenericTrackerIndicesDelegate>(
-                    nativeGetGenericTrackerIndicesHandle);
+            _getTrackerIndices =
+                Marshal.GetDelegateForFunctionPointer<GetTrackerIndicesDelegate>(
+                    nativeGetTrackerIndicesHandle);
             _getPoseForTracker =
                 Marshal.GetDelegateForFunctionPointer<GetPoseForTrackerDelegate>(nativeGetPoseForTrackerHandle);
-            _getPoseForHmd =
-                Marshal.GetDelegateForFunctionPointer<GetPoseForHmdDelegate>(nativeGetPoseForHmdHandle);
-            _getRoleForTracker =
-                Marshal.GetDelegateForFunctionPointer<GetRoleForTrackerDelegate>(nativeGetRoleForTrackerHandle);
+            _getTrackerSerial =
+                Marshal.GetDelegateForFunctionPointer<GetTrackerSerialDelegate>(nativeGetTrackerSerialHandle);
         }
 
         public VRError InitTracking()
@@ -67,7 +61,7 @@ namespace OVRTracking
         public int[] GetGenericTrackerIndices()
         {
             int size = 0;
-            IntPtr ptr = _getGenericTrackerIndices(ref size);
+            IntPtr ptr = _getTrackerIndices(ref size);
 
             if (size == 0 || ptr == IntPtr.Zero) return new int[] { };
 
@@ -80,15 +74,10 @@ namespace OVRTracking
         {
             return _getPoseForTracker.Invoke(index);
         }
-
-        public OVRTransform GetPoseForHmd()
+        
+        public string GetTrackerSerial(int index)
         {
-            return _getPoseForHmd.Invoke();
-        }
-
-        public OVRTrackerRole GetRoleForTracker(int index)
-        {
-            return _getRoleForTracker.Invoke(index);
+            return _getTrackerSerial.Invoke(index);
         }
 
         private static void HandleError(int error)
