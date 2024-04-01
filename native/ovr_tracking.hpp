@@ -1,6 +1,8 @@
 #pragma once
 
-#include "openvr/openvr.h"
+#include "openvr.h"
+
+#define OVR_TRACKING_API extern "C" __declspec(dllexport)
 
 typedef struct quaternion {
     [[maybe_unused]] float x, y, z, w;
@@ -21,11 +23,3 @@ typedef enum tracker_role {
     LEFT_FOOT = 2,
     RIGHT_FOOT = 3,
 } tracker_role;
-
-extern "C" {
-[[maybe_unused]] __declspec(dllexport) vr::HmdError init_tracking();
-[[maybe_unused]] __declspec(dllexport) vr::TrackedDeviceIndex_t *get_generic_tracker_indices(size_t *size);
-[[maybe_unused]] __declspec(dllexport) transform get_pose_for_tracker(vr::TrackedDeviceIndex_t index);
-[[maybe_unused]] __declspec(dllexport) transform get_pose_for_hmd();
-[[maybe_unused]] __declspec(dllexport) char *get_tracker_name(vr::TrackedDeviceIndex_t index);
-}
