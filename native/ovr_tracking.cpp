@@ -1,24 +1,45 @@
 #include "ovr_tracking.hpp"
 
-#include "openvr/openvr.h"
-
 #include <vector>
 #include <cmath>
 
 #include <windows.h>
 
+transform pose_to_transform(vr::TrackedDevicePose_t pose) {
+    auto pose_matrix = pose.mDeviceToAbsoluteTracking.m;
 
-extern "C" [[maybe_unused]] vr::HmdError init_tracking() {
+    // get position
+    vector_3 position {
+            pose_matrix[0][3],
+            pose_matrix[1][3],
+            -pose_matrix[2][3]
+    };
+
+    // get rotation (quaternion)
+    float rot_w = std::sqrt(1.0f + pose_matrix[0][0] + pose_matrix[1][1] + pose_matrix[2][2]) / 2.0f;
+    float rot_4w = 4 * rot_w;
+    quaternion rotation {
+            -((pose_matrix[2][1] - pose_matrix[1][2]) / rot_4w),
+            -((pose_matrix[0][2] - pose_matrix[2][0]) / rot_4w),
+            ((pose_matrix[1][0] - pose_matrix[0][1]) / rot_4w),
+            rot_w
+    };
+
+    return { position, rotation };
+}
+
+#pragma region API Functions
+
+OVR_TRACKING_API [[maybe_unused]] vr::HmdError init_tracking() {
     vr::HmdError error;
     vr::VR_Init(&error, vr::VRApplication_Background);
 
-    // if more than 99% of people can stand, im gonna assume more than 99% of people will stand
     vr::VRCompositor()->SetTrackingSpace(vr::ETrackingUniverseOrigin::TrackingUniverseStanding);
 
     return error;
 }
 
-extern "C" [[maybe_unused]] vr::TrackedDeviceIndex_t *get_generic_tracker_indices(size_t *size) {
+OVR_TRACKING_API [[maybe_unused]] vr::TrackedDeviceIndex_t *get_generic_tracker_indices(size_t *size) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
 
     std::vector<vr::TrackedDeviceIndex_t> tracker_indices {};
@@ -28,7 +49,6 @@ extern "C" [[maybe_unused]] vr::TrackedDeviceIndex_t *get_generic_tracker_indice
             tracker_indices.push_back(i);
     }
 
-    // store tracker indices on the heap, since the vector gets popped from the stack
     size_t tracker_count = tracker_indices.size();
 
     if (tracker_count == 0) {
@@ -43,63 +63,31 @@ extern "C" [[maybe_unused]] vr::TrackedDeviceIndex_t *get_generic_tracker_indice
     return reinterpret_cast<vr::TrackedDeviceIndex_t *>(indices_alloc);
 }
 
-extern "C" [[maybe_unused]] transform get_pose_for_tracker(vr::TrackedDeviceIndex_t index) {
+OVR_TRACKING_API [[maybe_unused]] transform get_pose_for_tracker(vr::TrackedDeviceIndex_t index) {
     static vr::IVRCompositor *compositor = vr::VRCompositor();
 
     vr::TrackedDevicePose_t pose{};
     compositor->GetLastPoseForTrackedDeviceIndex(index, nullptr, &pose);
-    auto pose_matrix = pose.mDeviceToAbsoluteTracking.m;
 
-    vector_3 position {
-        pose_matrix[0][3],
-        pose_matrix[1][3],
-        -pose_matrix[2][3]
-    };
-
-    float rot_w = std::sqrt(1.0f + pose_matrix[0][0] + pose_matrix[1][1] + pose_matrix[2][2]) / 2.0f;
-    float rot_4w = 4 * rot_w;
-    quaternion rotation {
-            -((pose_matrix[2][1] - pose_matrix[1][2]) / rot_4w),
-            -((pose_matrix[0][2] - pose_matrix[2][0]) / rot_4w),
-            ((pose_matrix[1][0] - pose_matrix[0][1]) / rot_4w),
-            rot_w
-    };
-
-    return { position, rotation };
+    return pose_to_transform(pose);
 }
 
-extern "C" [[maybe_unused]] transform get_pose_for_hmd() {
+OVR_TRACKING_API [[maybe_unused]] transform get_pose_for_hmd() {
     static vr::IVRCompositor *compositor = vr::VRCompositor();
 
     vr::TrackedDevicePose_t pose{};
     compositor->GetLastPoseForTrackedDeviceIndex(0, nullptr, &pose); // im 90% sure hmd is always #1.
-    auto pose_matrix = pose.mDeviceToAbsoluteTracking.m;
 
-    vector_3 position {
-            pose_matrix[0][3],
-            pose_matrix[1][3],
-            -pose_matrix[2][3]
-    };
-
-    float rot_w = std::sqrt(1.0f + pose_matrix[0][0] + pose_matrix[1][1] + pose_matrix[2][2]) / 2.0f;
-    float rot_4w = 4 * rot_w;
-    quaternion rotation {
-            -((pose_matrix[2][1] - pose_matrix[1][2]) / rot_4w),
-            -((pose_matrix[0][2] - pose_matrix[2][0]) / rot_4w),
-            ((pose_matrix[1][0] - pose_matrix[0][1]) / rot_4w),
-            rot_w
-    };
-
-    return { position, rotation };
+    return pose_to_transform(pose);
 }
 
-extern "C" [[maybe_unused]] char *get_tracker_name(vr::TrackedDeviceIndex_t index) {
+OVR_TRACKING_API [[maybe_unused]] char *get_tracker_serial(vr::TrackedDeviceIndex_t index) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
+    static char *pch_buffer = new char[vr::k_unMaxPropertyStringSize];
 
-    unsigned int size = vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_TrackingSystemName_String, nullptr, 0);
-
-    char *pch_buffer = new char[size];
-    (void)vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_ManufacturerName_String, pch_buffer, size);
+    (void)vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_SerialNumber_String, pch_buffer, vr::k_unMaxPropertyStringSize);
 
     return pch_buffer;
 }
+
+#pragma endregion // API Functions
