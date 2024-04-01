@@ -72,15 +72,6 @@ OVR_TRACKING_API [[maybe_unused]] transform get_pose_for_tracker(vr::TrackedDevi
     return pose_to_transform(pose);
 }
 
-OVR_TRACKING_API [[maybe_unused]] transform get_pose_for_hmd() {
-    static vr::IVRCompositor *compositor = vr::VRCompositor();
-
-    vr::TrackedDevicePose_t pose{};
-    compositor->GetLastPoseForTrackedDeviceIndex(0, nullptr, &pose); // im 90% sure hmd is always #1.
-
-    return pose_to_transform(pose);
-}
-
 OVR_TRACKING_API [[maybe_unused]] char *get_tracker_serial(vr::TrackedDeviceIndex_t index) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
     static char *pch_buffer = new char[vr::k_unMaxPropertyStringSize];
