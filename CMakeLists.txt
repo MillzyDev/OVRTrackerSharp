@@ -43,5 +43,10 @@ add_library(
 # static here means we dont need to include libc++
 target_link_options(${COMPILE_ID} PUBLIC -static)
 
+target_link_libraries(${COMPILE_ID} PUBLIC "${CMAKE_SOURCE_DIR}/openvr/bin/win64/libopenvr_api64.a")
+add_compile_definitions(-DOPENVR_BUILD_STATIC)
+
 target_include_directories(${COMPILE_ID} PRIVATE .)
 target_include_directories(${COMPILE_ID} PRIVATE ${SOURCE_DIR})
+
+target_include_directories(${COMPILE_ID} PUBLIC openvr/headers)
