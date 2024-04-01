@@ -39,7 +39,7 @@ OVR_TRACKING_API [[maybe_unused]] vr::HmdError init_tracking() {
     return error;
 }
 
-OVR_TRACKING_API [[maybe_unused]] vr::TrackedDeviceIndex_t *get_generic_tracker_indices(size_t *size) {
+OVR_TRACKING_API [[maybe_unused]] vr::TrackedDeviceIndex_t *get_tracker_indices(size_t *size) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
 
     std::vector<vr::TrackedDeviceIndex_t> tracker_indices {};
