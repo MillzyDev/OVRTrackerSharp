@@ -26,10 +26,6 @@ MACRO(RECURSE_FILES return_list filter)
     SET(${return_list} ${file_list})
 ENDMACRO()
 
-if (MELONSEED_INSTALL_AT_GAME)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GAME_PATH}/MelonSeed)
-endif ()
-
 RECURSE_FILES(cpp_file_list ${SOURCE_DIR}/*.cpp)
 RECURSE_FILES(c_file_list ${SOURCE_DIR}/*.c)
 
@@ -46,7 +42,6 @@ target_link_options(${COMPILE_ID} PUBLIC -static)
 target_link_libraries(${COMPILE_ID} PUBLIC "${CMAKE_SOURCE_DIR}/openvr/bin/win64/libopenvr_api64.a")
 add_compile_definitions(-DOPENVR_BUILD_STATIC)
 
-target_include_directories(${COMPILE_ID} PRIVATE .)
 target_include_directories(${COMPILE_ID} PRIVATE ${SOURCE_DIR})
 
 target_include_directories(${COMPILE_ID} PUBLIC openvr/headers)

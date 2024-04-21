@@ -1,7 +1,5 @@
 #pragma once
 
-#include "openvr.h"
-
 #define OVR_TRACKING_API extern "C" __declspec(dllexport)
 
 typedef struct quaternion {

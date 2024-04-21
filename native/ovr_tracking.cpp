@@ -1,7 +1,10 @@
 #include "ovr_tracking.hpp"
+#include "openvr.h"
 
 #include <vector>
 #include <cmath>
+#include <map>
+#include <string>
 
 #include <windows.h>
 
@@ -72,13 +75,29 @@ OVR_TRACKING_API [[maybe_unused]] transform get_pose_for_tracker(vr::TrackedDevi
     return pose_to_transform(pose);
 }
 
-OVR_TRACKING_API [[maybe_unused]] char *get_tracker_serial(vr::TrackedDeviceIndex_t index) {
+static std::map<vr::TrackedDeviceIndex_t, std::string_view> serial_cache;
+
+OVR_TRACKING_API [[maybe_unused]] const char *get_tracker_serial(vr::TrackedDeviceIndex_t index) {
     static vr::IVRSystem *vr_system = vr::VRSystem();
-    static char *pch_buffer = new char[vr::k_unMaxPropertyStringSize];
 
-    (void)vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_SerialNumber_String, pch_buffer, vr::k_unMaxPropertyStringSize);
+    auto it = serial_cache.find(index);
+    if (it != serial_cache.end()) {
+        return it->second.data();
+    }
 
-    return pch_buffer;
+    unsigned int size = vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_SerialNumber_String, nullptr, 0);
+    if (!size) {
+        return "";
+    }
+
+    char *buffer = new char[size];
+    (void)vr_system->GetStringTrackedDeviceProperty(index, vr::Prop_SerialNumber_String, buffer, size);
+
+    std::string serial_number(buffer);
+    delete[] buffer;
+
+    serial_cache.emplace(index, serial_number);
+    return serial_cache[index].data();
 }
 
 #pragma endregion // API Functions
