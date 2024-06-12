@@ -94,7 +94,7 @@ OVR_TRACKING_API vr::TrackedDeviceIndex_t *getTrackerIndices(size_t *size) {
     }
 
     const vr::TrackedDeviceIndex_t *indicesPtr = trackerIndices.data();
-    void *indices_alloc = calloc(trackerCount, sizeof(vr::TrackedDeviceIndex_t)); // windows is probably clever enough to free the heap for me
+    void *indices_alloc = calloc(trackerCount, sizeof(vr::TrackedDeviceIndex_t)); // TODO: This leaks memory.
     std::memcpy(indices_alloc, indicesPtr, trackerCount * sizeof(vr::TrackedDeviceIndex_t));
 
     *size = trackerCount;
